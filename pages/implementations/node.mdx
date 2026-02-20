@@ -1,0 +1,258 @@
+import { Callout } from 'nextra/components'
+
+# Node
+
+Represents a Lavalink node connection for managing audio playback.
+
+## Properties
+
+- `oneplayer` - OnePlayer instance
+- `name` - Node identifier
+- `host` - Lavalink host address
+- `port` - Lavalink port
+- `password` - Lavalink password
+- `secure` - Use HTTPS/WSS
+- `restVersion` - REST API version ('v3' or 'v4')
+- `connected` - Connection status
+- `penalties` - Load balancing penalty score (lower is better)
+- `rest` - REST client instance
+
+---
+
+## Methods
+
+### connect()
+
+Connect to the Lavalink node via WebSocket.
+
+```javascript copy
+node.connect();
+```
+
+**Returns:** `void`
+
+---
+
+### disconnect()
+
+Disconnect from the node.
+
+```javascript copy
+node.disconnect();
+```
+
+**Returns:** `void`
+
+---
+
+### destroy()
+
+Destroy the node connection and cleanup resources.
+
+```javascript copy
+node.destroy();
+```
+
+**Returns:** `void`
+
+---
+
+## Penalties
+
+Nodes are automatically load-balanced based on penalty scores. Lower penalties indicate better performance.
+
+Penalty calculation considers:
+- Number of active players
+- CPU load
+- Memory usage
+- Null frames
+- Deficit frames
+
+```javascript copy
+// Get node with lowest penalties
+const bestNode = oneplayer.bestNode;
+console.log(`Best node: ${bestNode.name} (penalties: ${bestNode.penalties})`);
+
+// Get nodes sorted by usage
+const leastUsed = oneplayer.leastUsedNodes;
+console.log(`Least used: ${leastUsed[0].name}`);
+```
+
+---
+
+## Events
+
+Nodes emit events through the Node instance:
+
+```javascript copy
+node.on('open', () => {
+  console.log(`Node ${node.name} connected`);
+});
+
+node.on('close', (code, reason) => {
+  console.log(`Node ${node.name} disconnected: ${code}`);
+});
+
+node.on('error', (error) => {
+  console.error(`Node ${node.name} error:`, error);
+});
+
+node.on('message', (data) => {
+  // Raw WebSocket messages
+});
+```
+
+---
+
+## Configuration
+
+Configure nodes when creating OnePlayer:
+
+```javascript copy
+const nodes = [
+  {
+    name: 'main',
+    host: 'localhost',
+    port: 2333,
+    password: 'youshallnotpass',
+    secure: false,
+    restVersion: 'v4'
+  },
+  {
+    name: 'backup',
+    host: 'backup.example.com',
+    port: 2333,
+    password: 'youshallnotpass',
+    secure: true,
+    restVersion: 'v4'
+  }
+];
+
+const oneplayer = new OnePlayer(client, nodes, options);
+```
+
+---
+
+## Multiple Nodes
+
+OnePlayer supports multiple nodes for load balancing and redundancy:
+
+```javascript copy
+// Create additional node at runtime
+const newNode = oneplayer.createNode({
+  name: 'node3',
+  host: 'node3.example.com',
+  port: 2333,
+  password: 'youshallnotpass',
+  secure: true,
+  restVersion: 'v4'
+});
+
+// Destroy a node
+oneplayer.destroyNode('node3');
+
+// Get all nodes
+const allNodes = [...oneplayer.nodeMap.values()];
+console.log(`Total nodes: ${allNodes.length}`);
+
+// Get connected nodes
+const connected = allNodes.filter(n => n.connected);
+console.log(`Connected: ${connected.length}`);
+```
+
+---
+
+## Node Selection
+
+OnePlayer automatically selects the best node for new players:
+
+```javascript copy
+// Uses least used node
+const player = oneplayer.createConnection({
+  guildId: message.guild.id,
+  voiceChannel: message.member.voice.channel.id
+});
+
+console.log(`Player using node: ${player.node.name}`);
+
+// Create player on specific node
+const specificNode = oneplayer.nodeMap.get('main');
+const player2 = oneplayer.createPlayer(specificNode, {
+  guildId: message.guild.id,
+  voiceChannel: message.member.voice.channel.id
+});
+```
+
+---
+
+## Example Usage
+
+```javascript copy
+const { OnePlayer } = require('oneplayer');
+
+const oneplayer = new OnePlayer(client, nodes, {
+  send: (guildId, payload) => {
+    const guild = client.guilds.cache.get(guildId);
+    if (guild) guild.shard.send(payload);
+  }
+});
+
+// Listen to node events
+oneplayer.on('nodeCreate', (node) => {
+  console.log(`✅ Node created: ${node.name}`);
+  
+  node.on('open', () => {
+    console.log(`🟢 ${node.name} connected`);
+  });
+  
+  node.on('close', (code) => {
+    console.log(`🔴 ${node.name} disconnected: ${code}`);
+  });
+  
+  node.on('error', (error) => {
+    console.error(`❌ ${node.name} error:`, error.message);
+  });
+});
+
+oneplayer.on('nodeDestroy', (node) => {
+  console.log(`🗑️ Node destroyed: ${node.name}`);
+});
+
+// Initialize
+client.on('ready', () => {
+  oneplayer.init(client.user.id);
+});
+```
+
+---
+
+## REST Client
+
+Each node has a REST client for API communication:
+
+```javascript copy
+// Load tracks
+const result = await node.rest.loadTracks('ytmsearch:song name');
+
+// Decode track
+const decoded = await node.rest.decodeTrack(encodedTrack);
+
+// Decode multiple tracks
+const decodedTracks = await node.rest.decodeTracks([track1, track2]);
+
+// Update player
+await node.rest.updatePlayer({
+  guildId: '123456789',
+  data: {
+    track: { encoded: trackData },
+    volume: 100,
+    paused: false
+  }
+});
+
+// Destroy player
+await node.rest.destroyPlayer('123456789');
+
+// Check API call count
+console.log(`API calls: ${node.rest.calls}`);
+```

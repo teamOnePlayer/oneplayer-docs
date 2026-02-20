@@ -1,0 +1,928 @@
+import { Callout } from 'nextra/components'
+
+# Complete API Reference
+
+OnePlayer is a high-performance Lavalink client for Discord.js. This page documents all classes, methods, and properties.
+
+<Callout type="info">
+All classes, methods, and properties are documented below in alphabetical order.
+</Callout>
+
+## Table of Contents
+
+- [Connection](#connection)
+- [Filters](#filters)
+- [Node](#node)
+- [OnePlayer](#oneplayer)
+- [Player](#player)
+- [Queue](#queue)
+- [Rest](#rest)
+- [Track](#track)
+
+---
+
+## Connection
+
+Manages voice connection state for a player.
+
+### Constructor
+```javascript
+new Connection(player)
+```
+
+### Properties
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `player` | Player | The associated player instance |
+| `sessionId` | string or undefined | Lavalink session ID |
+| `region` | string or undefined | Voice region |
+| `selfDeaf` | boolean | Whether the bot is self-deafened |
+| `selfMute` | boolean | Whether the bot is self-muted |
+
+### Methods
+
+#### setServerUpdate(data)
+Updates server connection information from Discord voice server update event.
+
+```javascript
+player.connection.setServerUpdate(voiceServerUpdateData);
+```
+
+#### setStateUpdate(data)
+Updates voice state from Discord voice state update event.
+
+```javascript
+player.connection.setStateUpdate(voiceStateUpdateData);
+```
+
+---
+
+## Filters
+
+High-performance audio filters for track manipulation.
+
+### Constructor
+```javascript
+new Filters(player, options = {})
+```
+
+### Properties
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `player` | Player | The associated player |
+| `volume` | number | Volume multiplier (default: 1.0) |
+| `equalizer` | Array | Equalizer bands configuration |
+| `karaoke` | Object or null | Karaoke filter settings |
+| `timescale` | Object or null | Timescale (speed/pitch) settings |
+| `tremolo` | Object or null | Tremolo filter settings |
+| `vibrato` | Object or null | Vibrato filter settings |
+| `rotation` | Object or null | Rotation (8D) filter settings |
+| `distortion` | Object or null | Distortion filter settings |
+| `channelMix` | Object or null | Channel mix settings |
+| `lowPass` | Object or null | Low pass filter settings |
+
+### Methods
+
+#### setEqualizer(bands)
+Set equalizer bands for frequency adjustment.
+
+```javascript
+await player.filters.setEqualizer([
+  { band: 0, gain: 0.5 },
+  { band: 1, gain: 0.3 },
+  { band: 2, gain: -0.2 }
+]);
+```
+
+**Parameters:**
+- `bands` (Array): Array of `{band: number, gain: number}` objects
+  - `band`: 0-14 (frequency band)
+  - `gain`: -0.25 to 1.0 (gain adjustment)
+
+#### setKaraoke(enabled, options)
+Enable/disable karaoke filter (vocal removal).
+
+```javascript
+await player.filters.setKaraoke(true, {
+  level: 1.0,
+  monoLevel: 1.0,
+  filterBand: 220.0,
+  filterWidth: 100.0
+});
+```
+
+#### setTimescale(enabled, options)
+Enable/disable timescale filter (speed and pitch adjustment).
+
+```javascript
+await player.filters.setTimescale(true, {
+  speed: 1.2,
+  pitch: 1.0,
+  rate: 1.0
+});
+```
+
+#### setTremolo(enabled, options)
+Enable/disable tremolo filter (amplitude modulation).
+
+```javascript
+await player.filters.setTremolo(true, {
+  frequency: 2.0,
+  depth: 0.5
+});
+```
+
+#### setVibrato(enabled, options)
+Enable/disable vibrato filter (frequency modulation).
+
+```javascript
+await player.filters.setVibrato(true, {
+  frequency: 2.0,
+  depth: 0.5
+});
+```
+
+#### setRotation(enabled, options)
+Enable/disable rotation filter (8D audio effect).
+
+```javascript
+await player.filters.setRotation(true, {
+  rotationHz: 0.2
+});
+```
+
+#### setDistortion(enabled, options)
+Enable/disable distortion filter.
+
+```javascript
+await player.filters.setDistortion(true, {
+  sinOffset: 0.0,
+  sinScale: 1.0,
+  cosOffset: 0.0,
+  cosScale: 1.0,
+  tanOffset: 0.0,
+  tanScale: 1.0,
+  offset: 0.0,
+  scale: 1.0
+});
+```
+
+#### setChannelMix(enabled, options)
+Enable/disable channel mix filter (stereo manipulation).
+
+```javascript
+await player.filters.setChannelMix(true, {
+  leftToLeft: 1.0,
+  leftToRight: 0.0,
+  rightToLeft: 0.0,
+  rightToRight: 1.0
+});
+```
+
+#### setLowPass(enabled, options)
+Enable/disable low pass filter.
+
+```javascript
+await player.filters.setLowPass(true, {
+  smoothing: 20.0
+});
+```
+
+#### clearFilters()
+Remove all active filters.
+
+```javascript
+await player.filters.clearFilters();
+```
+
+#### setBassBoost(level)
+Preset: Apply bass boost.
+
+```javascript
+await player.filters.setBassBoost(0.5); // 0.0 - 1.0
+```
+
+#### setNightcore()
+Preset: Apply nightcore effect (higher pitch and speed).
+
+```javascript
+await player.filters.setNightcore();
+```
+
+#### setVaporwave()
+Preset: Apply vaporwave effect (lower pitch and speed).
+
+```javascript
+await player.filters.setVaporwave();
+```
+
+#### set8D()
+Preset: Apply 8D audio effect.
+
+```javascript
+await player.filters.set8D();
+```
+
+### Getters
+
+#### active
+Get array of currently active filter names.
+
+```javascript
+const activeFilters = player.filters.active;
+// Returns: ['equalizer', 'timescale']
+```
+
+#### hasFilters
+Check if any filters are active.
+
+```javascript
+if (player.filters.hasFilters) {
+  console.log('Filters are active');
+}
+```
+
+---
+
+## Node
+
+Represents a Lavalink node connection.
+
+### Constructor
+```javascript
+new Node(oneplayer, nodeOptions, oneplayerOptions)
+```
+
+### Properties
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `name` | string | Node identifier name |
+| `host` | string | Node host address |
+| `port` | number | Node port |
+| `password` | string | Node password |
+| `secure` | boolean | Use secure connection (WSS) |
+| `restVersion` | string | REST API version ('v3' or 'v4') |
+| `connected` | boolean | Connection status |
+| `penalties` | number | Node penalty score (lower is better) |
+| `rest` | Rest | REST client instance |
+
+### Methods
+
+#### connect()
+Establish WebSocket connection to the node.
+
+```javascript
+node.connect();
+```
+
+#### disconnect()
+Close WebSocket connection.
+
+```javascript
+node.disconnect();
+```
+
+#### destroy()
+Destroy node and cleanup resources.
+
+```javascript
+node.destroy();
+```
+
+### Events
+
+- `open` - Connection established
+- `close` - Connection closed
+- `error` - Connection error
+- `message` - Message received
+
+---
+
+## OnePlayer
+
+Main engine managing nodes and players.
+
+### Constructor
+```javascript
+new OnePlayer(client, nodes, options)
+```
+
+**Parameters:**
+- `client` (Object): Discord.js client instance
+- `nodes` (Array): Array of node configurations
+- `options` (Object): Configuration options
+
+**Options:**
+```javascript
+{
+  send: (guildId, payload) => void,  // Required: Send voice state to Discord
+  defaultSearchPlatform: 'ytmsearch', // Search platform (default: 'ytmsearch')
+  restVersion: 'v4',                  // REST API version (default: 'v4')
+  reconnectTimeout: 3000,             // Reconnect delay in ms
+  reconnectTries: 3,                  // Reconnection attempts
+  defaultVolume: 100,                 // Default player volume (0-200)
+  connectionTimeout: 10000,           // Connection timeout in ms
+  debug: false                        // Enable debug logging
+}
+```
+
+### Properties
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `client` | Object | Discord.js client |
+| `nodes` | Array | Node configurations |
+| `nodeMap` | Map | Map of connected nodes |
+| `players` | Map | Map of active players |
+| `clientId` | string or null | Bot user ID |
+| `initiated` | boolean | Initialization status |
+| `version` | string | OnePlayer version |
+
+### Methods
+
+#### init(clientId)
+Initialize OnePlayer with bot user ID and create nodes.
+
+```javascript
+oneplayer.init(client.user.id);
+```
+
+**Returns:** OnePlayer instance (chainable)
+
+#### createNode(options)
+Create and connect a new node.
+
+```javascript
+const node = oneplayer.createNode({
+  name: 'main',
+  host: 'localhost',
+  port: 2333,
+  password: 'youshallnotpass',
+  secure: false,
+  restVersion: 'v4'
+});
+```
+
+**Returns:** Node instance
+
+#### destroyNode(identifier)
+Destroy a node by name or host.
+
+```javascript
+oneplayer.destroyNode('main');
+```
+
+#### updateVoiceState(packet)
+Update voice state from Discord gateway events.
+
+```javascript
+client.on('raw', (packet) => {
+  oneplayer.updateVoiceState(packet);
+});
+```
+
+#### createConnection(options)
+Create a player connection for a guild.
+
+```javascript
+const player = oneplayer.createConnection({
+  guildId: '123456789',
+  voiceChannel: '987654321',
+  textChannel: '111111111',
+  deaf: true,
+  mute: false
+});
+```
+
+**Returns:** Player instance
+
+#### createPlayer(node, options)
+Create a player on a specific node.
+
+```javascript
+const player = oneplayer.createPlayer(node, {
+  guildId: '123456789',
+  voiceChannel: '987654321'
+});
+```
+
+**Returns:** Player instance
+
+#### destroyPlayer(guildId)
+Destroy a player and disconnect from voice.
+
+```javascript
+oneplayer.destroyPlayer('123456789');
+```
+
+#### removeConnection(guildId)
+Remove a player connection.
+
+```javascript
+oneplayer.removeConnection('123456789');
+```
+
+#### get(guildId)
+Get a player by guild ID.
+
+```javascript
+const player = oneplayer.get('123456789');
+```
+
+**Throws:** Error if player not found
+
+#### resolve(options)
+Search for and resolve tracks.
+
+```javascript
+const result = await oneplayer.resolve({
+  query: 'song name',
+  source: 'ytmsearch',
+  requester: user,
+  node: 'main' // optional
+});
+```
+
+**Parameters:**
+- `query` (string): Search query or URL
+- `source` (string): Search platform (optional)
+- `requester` (any): User who requested
+- `node` (string | Node): Specific node (optional)
+
+**Returns:** Object with `{loadType, exception, playlistInfo, tracks}`
+
+#### decodeTrack(track, node)
+Decode a single track.
+
+```javascript
+const decoded = await oneplayer.decodeTrack(encodedTrack);
+```
+
+#### decodeTracks(tracks, node)
+Decode multiple tracks.
+
+```javascript
+const decoded = await oneplayer.decodeTracks([track1, track2]);
+```
+
+### Getters
+
+#### leastUsedNodes
+Get nodes sorted by least usage.
+
+```javascript
+const nodes = oneplayer.leastUsedNodes;
+```
+
+#### bestNode
+Get node with lowest penalty score.
+
+```javascript
+const node = oneplayer.bestNode;
+```
+
+### Events
+
+- `nodeCreate` - Node created
+- `nodeDestroy` - Node destroyed
+- `playerCreate` - Player created
+- `playerDestroy` - Player destroyed
+
+---
+
+## Player
+
+Manages audio playback for a guild.
+
+### Constructor
+```javascript
+new Player(oneplayer, node, options)
+```
+
+### Properties
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `oneplayer` | OnePlayer | OnePlayer instance |
+| `node` | Node | Associated node |
+| `guildId` | string | Guild ID |
+| `voiceChannel` | string | Voice channel ID |
+| `textChannel` | string or null | Text channel ID |
+| `connection` | Connection | Voice connection |
+| `queue` | Queue | Track queue |
+| `filters` | Filters | Audio filters |
+| `current` | Track or null | Currently playing track |
+| `previous` | Track or null | Previously played track |
+| `playing` | boolean | Playback status |
+| `paused` | boolean | Pause status |
+| `connected` | boolean | Voice connection status |
+| `volume` | number | Volume (0-200) |
+| `position` | number | Current position in ms |
+| `loop` | string | Loop mode ('none', 'track', 'queue') |
+
+### Methods
+
+#### connect(options)
+Connect to voice channel.
+
+```javascript
+player.connect({
+  voiceChannel: '987654321',
+  textChannel: '111111111',
+  deaf: true,
+  mute: false
+});
+```
+
+#### disconnect()
+Disconnect from voice channel.
+
+```javascript
+player.disconnect();
+```
+
+#### destroy()
+Destroy player and cleanup.
+
+```javascript
+player.destroy();
+```
+
+#### play(track)
+Play a track or next from queue.
+
+```javascript
+await player.play(track);
+// or
+await player.play(); // plays next from queue
+```
+
+#### stop()
+Stop playback.
+
+```javascript
+await player.stop();
+```
+
+#### pause(paused)
+Pause or resume playback.
+
+```javascript
+await player.pause(true);  // pause
+await player.pause(false); // resume
+```
+
+#### seek(position)
+Seek to position in track.
+
+```javascript
+await player.seek(30000); // seek to 30 seconds
+```
+
+#### setVolume(volume)
+Set player volume.
+
+```javascript
+await player.setVolume(100); // 0-200
+```
+
+#### skip()
+Skip to next track.
+
+```javascript
+await player.skip();
+```
+
+#### setLoop(mode)
+Set loop mode.
+
+```javascript
+player.setLoop('none');   // no loop
+player.setLoop('track');  // loop current track
+player.setLoop('queue');  // loop entire queue
+```
+
+### Getters
+
+#### currentPosition
+Get current playback position with interpolation.
+
+```javascript
+const pos = player.currentPosition; // milliseconds
+```
+
+#### isIdle
+Check if player is idle (not playing, empty queue).
+
+```javascript
+if (player.isIdle) {
+  console.log('Player is idle');
+}
+```
+
+#### state
+Get complete player state for debugging.
+
+```javascript
+const state = player.state;
+// {
+//   guildId, voiceChannel, textChannel, playing, paused,
+//   connected, volume, loop, position, queueSize, current, filters
+// }
+```
+
+### Events
+
+- `trackStart` - Track started playing
+- `trackEnd` - Track finished
+- `trackError` - Track failed to play
+- `trackStuck` - Track got stuck
+- `socketClosed` - WebSocket closed
+- `error` - Error occurred
+
+---
+
+## Queue
+
+Manages track queue with advanced operations. Extends Array.
+
+### Constructor
+```javascript
+new Queue()
+```
+
+### Properties
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `size` | number | Number of tracks in queue |
+| `first` | Track or null | First track |
+| `last` | Track or null | Last track |
+| `isEmpty` | boolean | Queue is empty |
+| `totalDuration` | number | Total duration in ms (cached) |
+| `formattedDuration` | string | Formatted duration (HH:MM:SS) |
+
+### Methods
+
+#### add(track)
+Add track(s) to queue.
+
+```javascript
+queue.add(track);
+queue.add([track1, track2]);
+```
+
+#### remove(index)
+Remove track at index.
+
+```javascript
+const removed = queue.remove(0);
+```
+
+#### removeRange(start, count)
+Remove multiple tracks.
+
+```javascript
+const removed = queue.removeRange(0, 5);
+```
+
+#### clear()
+Clear entire queue.
+
+```javascript
+queue.clear();
+```
+
+#### shuffle()
+Shuffle queue using Fisher-Yates algorithm.
+
+```javascript
+queue.shuffle();
+```
+
+#### move(from, to)
+Move track to different position.
+
+```javascript
+queue.move(0, 5);
+```
+
+#### swap(i1, i2)
+Swap two tracks.
+
+```javascript
+queue.swap(0, 1);
+```
+
+#### getByRequester(requester)
+Get tracks by requester.
+
+```javascript
+const userTracks = queue.getByRequester(userId);
+```
+
+#### removeByRequester(requester)
+Remove all tracks by requester.
+
+```javascript
+const removed = queue.removeByRequester(userId);
+```
+
+#### removeDuplicates()
+Remove duplicate tracks by identifier.
+
+```javascript
+queue.removeDuplicates();
+```
+
+#### reverse()
+Reverse queue order.
+
+```javascript
+queue.reverse();
+```
+
+#### peek(start, end)
+Get slice without modifying queue.
+
+```javascript
+const slice = queue.peek(0, 10);
+```
+
+#### skipTo(index)
+Skip to specific index, removing all tracks before it.
+
+```javascript
+const skipped = queue.skipTo(5);
+```
+
+---
+
+## Rest
+
+REST client for Lavalink API communication.
+
+### Constructor
+```javascript
+new Rest(oneplayer, node)
+```
+
+### Properties
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `calls` | number | Number of API calls made |
+| `version` | string | REST API version ('v3' or 'v4') |
+
+### Methods
+
+#### loadTracks(identifier)
+Load tracks from identifier.
+
+```javascript
+const result = await rest.loadTracks('ytmsearch:song name');
+```
+
+#### decodeTrack(track)
+Decode single track.
+
+```javascript
+const decoded = await rest.decodeTrack(encodedTrack);
+```
+
+#### decodeTracks(tracks)
+Decode multiple tracks.
+
+```javascript
+const decoded = await rest.decodeTracks([track1, track2]);
+```
+
+#### updatePlayer(payload)
+Update player state.
+
+```javascript
+await rest.updatePlayer({
+  guildId: '123456789',
+  data: {
+    track: { encoded: trackData },
+    volume: 100,
+    paused: false
+  }
+});
+```
+
+#### destroyPlayer(guildId)
+Destroy player on Lavalink.
+
+```javascript
+await rest.destroyPlayer('123456789');
+```
+
+---
+
+## Track
+
+Represents a playable audio track.
+
+### Constructor
+```javascript
+new Track(data, requester, node)
+```
+
+### Properties
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `encoded` | string | Encoded track data |
+| `track` | string | Alias for encoded |
+| `info` | Object | Track metadata |
+| `info.identifier` | string | Track ID |
+| `info.seekable` | boolean | Can seek |
+| `info.author` | string | Track author |
+| `info.length` | number | Duration in ms |
+| `info.stream` | boolean | Is stream |
+| `info.position` | number | Current position |
+| `info.title` | string | Track title |
+| `info.uri` | string | Track URL |
+| `info.artworkUrl` | string or null | Artwork URL |
+| `info.sourceName` | string | Source (youtube, spotify, etc) |
+| `info.isrc` | string or null | ISRC code |
+| `info.requester` | any | User who requested |
+| `pluginInfo` | Object | Plugin-specific data |
+
+### Methods
+
+#### getThumbnail()
+Get thumbnail URL with smart fallback.
+
+```javascript
+const thumbnail = await track.getThumbnail();
+```
+
+**Returns:** Promise (string or null)
+
+#### resolve(oneplayer)
+Resolve unresolved track (e.g., Spotify to YouTube).
+
+```javascript
+await track.resolve(oneplayer);
+```
+
+**Returns:** Promise (Track)
+
+#### toJSON()
+Convert to JSON.
+
+```javascript
+const json = track.toJSON();
+```
+
+### Static Methods
+
+#### Track.fetchThumbnail(info)
+Fetch thumbnail from various sources (YouTube, Spotify, SoundCloud).
+
+```javascript
+const url = await Track.fetchThumbnail(trackInfo);
+```
+
+**Returns:** Promise (string or null)
+
+---
+
+## Search Platforms
+
+Available search platforms for `resolve()`:
+
+- `ytmsearch` - YouTube Music (default)
+- `ytsearch` - YouTube
+- `scsearch` - SoundCloud
+- `spsearch` - Spotify
+- `amsearch` - Apple Music
+- `dzsearch` - Deezer
+
+Or provide a direct URL from supported platforms.
+
+---
+
+## Loop Modes
+
+Available loop modes for `player.setLoop()`:
+
+- `none` - No looping
+- `track` - Loop current track
+- `queue` - Loop entire queue
+
+---
+
+## Filter Presets
+
+Quick filter presets available:
+
+- `setBassBoost(level)` - Bass enhancement (0.0 - 1.0)
+- `setNightcore()` - Higher pitch and speed
+- `setVaporwave()` - Lower pitch and speed
+- `set8D()` - 8D audio rotation effect

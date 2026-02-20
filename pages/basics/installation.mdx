@@ -1,0 +1,65 @@
+import { Callout } from 'nextra/components'
+
+# Installation
+
+<Callout type="warning">
+Node.js **18.0.0** or newer is required.
+</Callout>
+
+To install **OnePlayer**, run the following command in your terminal:
+
+```bash copy
+npm install oneplayer
+```
+
+### Dependencies
+
+OnePlayer uses the following dependencies:
+- **ws** - WebSocket client for Lavalink communication
+- **undici** - HTTP client for REST requests
+- **discord.js** - Discord API library (peer dependency)
+
+### Importing
+
+To import **OnePlayer**, use the following code:
+
+```javascript copy
+const { OnePlayer } = require("oneplayer");
+```
+
+### Available Exports
+
+```javascript copy
+const { 
+  // Core Engine
+  OnePlayer,
+  
+  // Network
+  Node,
+  Rest,
+  
+  // Player
+  Player,
+  Track,
+  Queue,
+  Connection,
+  
+  // Audio
+  Filters,
+  
+  // Meta
+  version
+} = require("oneplayer");
+```
+
+### Lavalink Server
+
+You'll also need a running Lavalink server. Here's a quick setup:
+
+1. Download Lavalink from [GitHub](https://github.com/lavalink-devs/Lavalink)
+2. Install Java 11 or newer
+3. Configure `application.yml`
+4. Run: `java -jar Lavalink.jar`
+
+Default Lavalink runs on `localhost:2333` with password `youshallnotpass`
+

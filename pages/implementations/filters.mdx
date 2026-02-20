@@ -1,0 +1,256 @@
+import { Callout } from 'nextra/components'
+
+# Filters
+
+OnePlayer provides high-performance audio filters to modify sound characteristics.
+
+<Callout type="info">
+All filter methods are asynchronous and return a Promise.
+</Callout>
+
+## Basic Filters
+
+### setEqualizer(bands)
+15-band equalizer for frequency adjustment.
+
+```javascript copy
+await player.filters.setEqualizer([
+  { band: 0, gain: 0.5 },   // 25 Hz
+  { band: 1, gain: 0.3 },   // 40 Hz
+  { band: 2, gain: 0.2 },   // 63 Hz
+  { band: 3, gain: 0.0 },   // 100 Hz
+  { band: 4, gain: -0.1 },  // 160 Hz
+  // ... up to band 14 (12.8 kHz)
+]);
+```
+
+**Parameters:**
+- `bands` (Array): Array of `{band: number, gain: number}`
+  - `band`: 0-14 (frequency band)
+  - `gain`: -0.25 to 1.0
+
+### setKaraoke(enabled, options)
+Remove vocals from the track.
+
+```javascript copy
+// Enable with defaults
+await player.filters.setKaraoke(true);
+
+// Custom settings
+await player.filters.setKaraoke(true, {
+  level: 1.0,
+  monoLevel: 1.0,
+  filterBand: 220.0,
+  filterWidth: 100.0
+});
+
+// Disable
+await player.filters.setKaraoke(false);
+```
+
+### setTimescale(enabled, options)
+Change speed, pitch, and rate.
+
+```javascript copy
+await player.filters.setTimescale(true, {
+  speed: 1.2,   // 0.1 - 3.0
+  pitch: 1.0,   // 0.1 - 3.0
+  rate: 1.0     // 0.1 - 3.0
+});
+
+await player.filters.setTimescale(false);
+```
+
+### setTremolo(enabled, options)
+Add tremolo (amplitude modulation) effect.
+
+```javascript copy
+await player.filters.setTremolo(true, {
+  frequency: 2.0,  // 0.1 - 20.0
+  depth: 0.5       // 0.0 - 1.0
+});
+
+await player.filters.setTremolo(false);
+```
+
+### setVibrato(enabled, options)
+Add vibrato (frequency modulation) effect.
+
+```javascript copy
+await player.filters.setVibrato(true, {
+  frequency: 2.0,  // 0.1 - 14.0
+  depth: 0.5       // 0.0 - 1.0
+});
+
+await player.filters.setVibrato(false);
+```
+
+### setRotation(enabled, options)
+Add rotation effect (8D audio).
+
+```javascript copy
+await player.filters.setRotation(true, {
+  rotationHz: 0.2  // 0.0 - 1.0
+});
+
+await player.filters.setRotation(false);
+```
+
+### setDistortion(enabled, options)
+Add distortion effect.
+
+```javascript copy
+await player.filters.setDistortion(true, {
+  sinOffset: 0.0,
+  sinScale: 1.0,
+  cosOffset: 0.0,
+  cosScale: 1.0,
+  tanOffset: 0.0,
+  tanScale: 1.0,
+  offset: 0.0,
+  scale: 1.0
+});
+
+await player.filters.setDistortion(false);
+```
+
+### setChannelMix(enabled, options)
+Mix left and right audio channels.
+
+```javascript copy
+await player.filters.setChannelMix(true, {
+  leftToLeft: 1.0,
+  leftToRight: 0.0,
+  rightToLeft: 0.0,
+  rightToRight: 1.0
+});
+
+await player.filters.setChannelMix(false);
+```
+
+### setLowPass(enabled, options)
+Remove high frequencies.
+
+```javascript copy
+await player.filters.setLowPass(true, {
+  smoothing: 20.0  // 1.0 - 100.0
+});
+
+await player.filters.setLowPass(false);
+```
+
+---
+
+## Preset Filters
+
+### setBassBoost(level)
+Boost bass frequencies.
+
+```javascript copy
+await player.filters.setBassBoost(0.5); // 0.0 - 1.0
+```
+
+<Callout type="info">
+Bass boost level ranges from 0.0 to 1.0.
+</Callout>
+
+### setNightcore()
+Speed up with higher pitch.
+
+```javascript copy
+await player.filters.setNightcore();
+// Applies: speed: 1.3, pitch: 1.3, rate: 1.0
+```
+
+### setVaporwave()
+Slow down with lower pitch.
+
+```javascript copy
+await player.filters.setVaporwave();
+// Applies: speed: 0.8, pitch: 0.8, rate: 1.0
+```
+
+### set8D()
+8D rotating audio effect.
+
+```javascript copy
+await player.filters.set8D();
+// Applies: rotationHz: 0.2
+```
+
+---
+
+## Clear All Filters
+
+```javascript copy
+await player.filters.clearFilters();
+```
+
+## Get Active Filters
+
+```javascript copy
+// Get array of active filter names
+const active = player.filters.active;
+console.log(active); // ['equalizer', 'timescale']
+
+// Check if any filters are active
+if (player.filters.hasFilters) {
+  console.log('Filters are active');
+}
+
+// Get full filter state
+const state = player.filters.toJSON();
+console.log(state);
+```
+
+## Example Usage
+
+```javascript copy
+const { OnePlayer } = require('oneplayer');
+
+// Create player
+const player = oneplayer.createConnection({
+  guildId: message.guild.id,
+  voiceChannel: message.member.voice.channel.id
+});
+
+// Apply bass boost
+await player.filters.setBassBoost(0.5);
+
+// Apply nightcore
+await player.filters.setNightcore();
+
+// Apply custom timescale
+await player.filters.setTimescale(true, {
+  speed: 1.5,
+  pitch: 1.2,
+  rate: 1.0
+});
+
+// Check active filters
+console.log(player.filters.active);
+
+// Clear all filters
+await player.filters.clearFilters();
+```
+
+## Filter Combinations
+
+You can combine multiple filters:
+
+```javascript copy
+// Bass boost + 8D
+await player.filters.setBassBoost(0.5);
+await player.filters.set8D();
+
+// Nightcore + Karaoke
+await player.filters.setNightcore();
+await player.filters.setKaraoke(true);
+
+// Custom EQ + Rotation
+await player.filters.setEqualizer([
+  { band: 0, gain: 0.5 },
+  { band: 1, gain: 0.3 }
+]);
+await player.filters.setRotation(true, { rotationHz: 0.3 });
+```

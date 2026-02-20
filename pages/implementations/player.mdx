@@ -1,0 +1,295 @@
+import { Callout, Cards } from 'nextra/components'
+import { ArrowRightIcon } from 'nextra/icons'
+
+# Player
+
+Represents a player in a guild for audio playback.
+
+## Properties
+
+- `oneplayer` - OnePlayer instance
+- `node` - Current Lavalink node
+- `guildId` - Guild ID
+- `voiceChannel` - Voice channel ID
+- `textChannel` - Text channel ID (optional)
+- `connection` - Voice connection manager
+- `queue` - Track queue
+- `filters` - Audio filters
+- `current` - Currently playing track
+- `previous` - Previously played track
+- `volume` - Current volume (0-200)
+- `loop` - Loop mode: `'none'`, `'track'`, `'queue'`
+- `position` - Current position in ms
+- `timestamp` - Last update timestamp
+- `ping` - Voice connection ping
+- `playing` - Is playing
+- `paused` - Is paused
+- `connected` - Is connected to voice
+- `deaf` - Self deafened
+- `mute` - Self muted
+
+---
+
+## Methods
+
+### connect(options)
+
+Connect to a voice channel.
+
+```javascript copy
+player.connect({
+  voiceChannel: "987654321",
+  textChannel: "111111111",
+  deaf: true,
+  mute: false
+});
+```
+
+**Returns:** `void`
+
+---
+
+### disconnect()
+
+Disconnect from voice channel.
+
+```javascript copy
+player.disconnect();
+```
+
+**Returns:** `void`
+
+---
+
+### destroy()
+
+Destroy the player and cleanup resources.
+
+```javascript copy
+player.destroy();
+```
+
+**Returns:** `void`
+
+---
+
+### play(track)
+
+Play a track or next from queue.
+
+```javascript copy
+// Play specific track
+await player.play(track);
+
+// Play next from queue
+await player.play();
+```
+
+**Returns:** `Promise<void>`
+
+---
+
+### stop()
+
+Stop playback and clear current track.
+
+```javascript copy
+await player.stop();
+```
+
+**Returns:** `Promise<void>`
+
+---
+
+### pause(paused)
+
+Pause or resume playback.
+
+```javascript copy
+await player.pause(true);  // Pause
+await player.pause(false); // Resume
+```
+
+**Parameters:**
+- `paused` (boolean): Pause state
+
+**Returns:** `Promise<void>`
+
+---
+
+### seek(position)
+
+Seek to a position in the current track.
+
+```javascript copy
+await player.seek(60000); // Seek to 1 minute
+```
+
+**Parameters:**
+- `position` (number): Position in milliseconds
+
+**Returns:** `Promise<void>`
+
+---
+
+### setVolume(volume)
+
+Set player volume.
+
+```javascript copy
+await player.setVolume(100); // 0-200
+```
+
+**Parameters:**
+- `volume` (number): Volume level (0-200)
+
+**Returns:** `Promise<void>`
+
+---
+
+### skip()
+
+Skip to the next track in queue.
+
+```javascript copy
+await player.skip();
+```
+
+**Returns:** `Promise<void>`
+
+---
+
+### setLoop(mode)
+
+Set loop mode.
+
+```javascript copy
+player.setLoop('none');   // No loop
+player.setLoop('track');  // Loop current track
+player.setLoop('queue');  // Loop entire queue
+```
+
+**Parameters:**
+- `mode` (string): `'none'`, `'track'`, or `'queue'`
+
+**Returns:** `void`
+
+<Cards>
+  <Cards.Card icon={<ArrowRightIcon />} title="Loop" href="/implementations/loop" />
+</Cards>
+
+---
+
+## Getters
+
+### currentPosition
+
+Get current playback position with interpolation.
+
+```javascript copy
+const position = player.currentPosition; // milliseconds
+```
+
+**Returns:** `number`
+
+---
+
+### isIdle
+
+Check if player is idle (not playing and empty queue).
+
+```javascript copy
+if (player.isIdle) {
+  console.log('Player is idle');
+}
+```
+
+**Returns:** `boolean`
+
+---
+
+### state
+
+Get complete player state for debugging.
+
+```javascript copy
+const state = player.state;
+console.log(state);
+// {
+//   guildId, voiceChannel, textChannel, playing, paused,
+//   connected, volume, loop, position, queueSize, current, filters
+// }
+```
+
+**Returns:** `Object`
+
+---
+
+## Events
+
+The player emits events through the OnePlayer instance:
+
+```javascript copy
+player.on('trackStart', (player, track) => {
+  console.log(`Now playing: ${track.info.title}`);
+});
+
+player.on('trackEnd', (player, track, payload) => {
+  console.log(`Track ended: ${payload.reason}`);
+});
+
+player.on('trackError', (player, track, payload) => {
+  console.error('Track error:', payload.exception);
+});
+
+player.on('trackStuck', (player, track, payload) => {
+  console.log('Track stuck:', payload.thresholdMs);
+});
+
+player.on('socketClosed', (player, payload) => {
+  console.log('WebSocket closed:', payload.code);
+});
+```
+
+<Cards>
+  <Cards.Card icon={<ArrowRightIcon />} title="Events" href="/implementations/events" />
+</Cards>
+
+---
+
+## Example Usage
+
+```javascript copy
+const { OnePlayer } = require('oneplayer');
+
+// Create player
+const player = oneplayer.createConnection({
+  guildId: message.guild.id,
+  voiceChannel: message.member.voice.channel.id,
+  textChannel: message.channel.id,
+  deaf: true
+});
+
+// Search and add track
+const result = await oneplayer.resolve({
+  query: 'song name',
+  requester: message.author
+});
+
+player.queue.add(result.tracks[0]);
+
+// Play
+await player.play();
+
+// Control playback
+await player.pause(true);
+await player.setVolume(80);
+await player.seek(30000);
+await player.skip();
+
+// Loop
+player.setLoop('track');
+
+// Cleanup
+player.destroy();
+```

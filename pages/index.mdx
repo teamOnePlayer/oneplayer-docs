@@ -1,0 +1,94 @@
+# Introducing OnePlayer
+
+**OnePlayer** is a high-performance, minimal Lavalink client for Discord.js with ultra-low latency and optimized resource usage.
+
+import { Callout } from 'nextra/components'
+
+<Callout type="info">
+    OnePlayer 1.0.0 is now available! A lightweight, efficient Lavalink client focused on core functionality.
+    
+    Contributions are appreciated 💖!
+</Callout>
+
+## Features
+
+- 🚀 **Supports Lavalink v3 and v4**
+- ⚡ **Ultra-low latency** - Optimized for performance
+- 🎵 **Audio Filters** - Equalizer, Karaoke, Timescale, Tremolo, Vibrato, Rotation, Distortion, Channel Mix, Low Pass
+- 🎧 **Filter Presets** - Bass Boost, Nightcore, Vaporwave, 8D Audio
+- 🔄 **Loop Modes** - None, Track, Queue
+- 📦 **Queue Management** - Add, remove, shuffle, move, swap, and more
+- 🎯 **Smart Node Selection** - Automatic load balancing
+- 🔌 **Multiple Nodes** - Support for multiple Lavalink servers
+- 📊 **Track Resolution** - YouTube, YouTube Music, SoundCloud, Spotify, and more
+- 🎨 **Thumbnail Support** - Automatic thumbnail fetching
+- 💾 **Minimal Memory Footprint** - Optimized for efficiency
+- 🛠️ **TypeScript Definitions** - Full type support included
+
+## Core Components
+
+- **OnePlayer** - Main engine managing nodes and players
+- **Node** - Lavalink node connection management
+- **Player** - Audio playback control for guilds
+- **Queue** - Advanced queue operations
+- **Filters** - High-performance audio filters
+- **Track** - Track metadata and resolution
+- **Connection** - Voice connection management
+- **Rest** - Lavalink REST API client
+
+## What Makes OnePlayer Different
+
+OnePlayer focuses on **core functionality** with **maximum performance**:
+
+- ✅ Minimal dependencies (only ws and undici)
+- ✅ Optimized memory usage
+- ✅ Clean, simple API
+- ✅ No bloat - just what you need
+- ✅ Production-ready and stable
+
+## Quick Start
+
+```bash
+npm install oneplayer
+```
+
+```javascript
+const { OnePlayer } = require('oneplayer');
+
+const oneplayer = new OnePlayer(client, nodes, {
+  send: (guildId, payload) => {
+    const guild = client.guilds.cache.get(guildId);
+    if (guild) guild.shard.send(payload);
+  }
+});
+
+oneplayer.init(client.user.id);
+```
+
+## Resources
+
+### Discord Libraries
+- Discord.js: https://discord.js.org/
+
+### Lavalink
+- Lavalink: https://lavalink.dev
+- LavaSrc: https://github.com/topi314/LavaSrc
+
+## Team
+
+🟣 **Pappu100**
+- GitHub: [@Pappu100](https://github.com/Pappu100Code)
+- Discord @pappu100
+
+🟡 **Dileep**
+- GitHub: [@Dileep](https://github.com/Dileep100Code)
+- Discord @dileep_c
+
+🔵 **Echo**
+- GitHub: [@unfortunatelyecho](https://github.com/unfortunatelyecho)
+- Discord @unfortunatelyecho
+
+
+# Powered By Community One
+
+Support Server [Link](https://discord.gg/JGGkaXps4b)

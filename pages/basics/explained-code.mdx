@@ -1,0 +1,387 @@
+import { Callout } from 'nextra/components'
+
+# Getting Started Guide
+
+A complete walkthrough of building a music bot with OnePlayer.
+
+<Callout type="info">
+This guide shows you how to set up OnePlayer from scratch with a working music bot example.
+</Callout>
+
+## Prerequisites
+
+- Node.js 18+
+- A Discord bot token
+- A running Lavalink server
+
+## Installation
+
+```bash copy
+npm install discord.js oneplayer
+```
+
+## Basic Setup
+
+### Step 1: Create the Client
+
+```javascript
+const { Client, GatewayIntentBits } = require('discord.js');
+const { OnePlayer } = require('oneplayer');
+
+const client = new Client({
+  intents: [
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildVoiceStates,
+    GatewayIntentBits.GuildMessages,
+    GatewayIntentBits.MessageContent,
+  ],
+});
+```
+
+### Step 2: Configure Nodes
+
+```javascript
+const nodes = [
+  {
+    name: 'main',
+    host: 'localhost',
+    port: 2333,
+    password: 'youshallnotpass',
+    secure: false,
+    restVersion: 'v4'
+  }
+];
+```
+
+### Step 3: Initialize OnePlayer
+
+```javascript
+const oneplayer = new OnePlayer(client, nodes, {
+  send: (guildId, payload) => {
+    const guild = client.guilds.cache.get(guildId);
+    if (guild) guild.shard.send(payload);
+  },
+  defaultSearchPlatform: 'ytmsearch',
+  restVersion: 'v4',
+  defaultVolume: 100,
+  debug: false
+});
+
+client.on('ready', () => {
+  oneplayer.init(client.user.id);
+  console.log('✅ Bot ready!');
+});
+```
+
+### Step 4: Handle Voice Events
+
+**This is critical** - OnePlayer needs raw voice events:
+
+```javascript
+client.on('raw', (packet) => {
+  oneplayer.updateVoiceState(packet);
+});
+```
+
+## Basic Commands
+
+### Play Command
+
+```javascript
+client.on('messageCreate', async (message) => {
+  if (message.author.bot) return;
+  if (!message.content.startsWith('!')) return;
+
+  const [command, ...args] = message.content.slice(1).split(' ');
+  const query = args.join(' ');
+
+  if (command === 'play') {
+    if (!message.member.voice.channel) {
+      return message.reply('❌ Join a voice channel first!');
+    }
+
+    // Create player
+    const player = oneplayer.createConnection({
+      guildId: message.guild.id,
+      voiceChannel: message.member.voice.channel.id,
+      textChannel: message.channel.id,
+      deaf: true
+    });
+
+    // Search for track
+    const result = await oneplayer.resolve({
+      query: query,
+      requester: message.author
+    });
+
+    if (!result.tracks.length) {
+      return message.reply('❌ No results found!');
+    }
+
+    // Add to queue
+    const track = result.tracks[0];
+    player.queue.add(track);
+
+    // Play if not already playing
+    if (!player.playing) {
+      await player.play();
+    }
+
+    message.reply(`🎵 Added **${track.info.title}**`);
+  }
+});
+```
+
+### Skip Command
+
+```javascript
+if (command === 'skip') {
+  const player = oneplayer.get(message.guild.id);
+  if (!player) return message.reply('❌ Nothing playing!');
+
+  await player.skip();
+  message.reply('⏭️ Skipped!');
+}
+```
+
+### Stop Command
+
+```javascript
+if (command === 'stop') {
+  const player = oneplayer.get(message.guild.id);
+  if (!player) return message.reply('❌ Nothing playing!');
+
+  player.destroy();
+  message.reply('⏹️ Stopped!');
+}
+```
+
+### Queue Command
+
+```javascript
+if (command === 'queue') {
+  const player = oneplayer.get(message.guild.id);
+  if (!player) return message.reply('❌ Nothing playing!');
+
+  let msg = `**Now Playing:**\n🎵 ${player.current.info.title}\n\n`;
+  
+  if (player.queue.size > 0) {
+    msg += `**Queue (${player.queue.size} tracks):**\n`;
+    player.queue.peek(0, 10).forEach((track, i) => {
+      msg += `${i + 1}. ${track.info.title}\n`;
+    });
+  }
+
+  message.reply(msg);
+}
+```
+
+### Volume Command
+
+```javascript
+if (command === 'volume') {
+  const player = oneplayer.get(message.guild.id);
+  if (!player) return message.reply('❌ Nothing playing!');
+
+  const vol = parseInt(args[0]);
+  if (isNaN(vol) || vol < 0 || vol > 200) {
+    return message.reply(`🔊 Current: ${player.volume}%`);
+  }
+
+  await player.setVolume(vol);
+  message.reply(`🔊 Volume: ${vol}%`);
+}
+```
+
+## Events
+
+Listen to player events:
+
+```javascript
+oneplayer.on('playerCreate', (player) => {
+  console.log(`Player created for guild ${player.guildId}`);
+});
+
+oneplayer.on('playerDestroy', (player) => {
+  console.log(`Player destroyed for guild ${player.guildId}`);
+});
+
+oneplayer.on('nodeCreate', (node) => {
+  console.log(`Node ${node.name} connected`);
+});
+
+oneplayer.on('nodeDestroy', (node) => {
+  console.log(`Node ${node.name} disconnected`);
+});
+```
+
+Listen to track events:
+
+```javascript
+client.on('trackStart', (player, track) => {
+  const channel = client.channels.cache.get(player.textChannel);
+  if (channel) {
+    channel.send(`🎵 Now playing: **${track.info.title}**`);
+  }
+});
+
+client.on('trackEnd', (player, track) => {
+  console.log(`Track ended: ${track.info.title}`);
+});
+
+client.on('trackError', (player, track, error) => {
+  const channel = client.channels.cache.get(player.textChannel);
+  if (channel) {
+    channel.send(`❌ Error: ${error.message}`);
+  }
+});
+```
+
+## Filters
+
+Apply audio filters:
+
+```javascript
+if (command === 'bassboost') {
+  const player = oneplayer.get(message.guild.id);
+  if (!player) return message.reply('❌ Nothing playing!');
+
+  await player.filters.setBassBoost(0.5);
+  message.reply('🔊 Bass boost enabled!');
+}
+
+if (command === 'nightcore') {
+  const player = oneplayer.get(message.guild.id);
+  if (!player) return message.reply('❌ Nothing playing!');
+
+  await player.filters.setNightcore();
+  message.reply('🌙 Nightcore enabled!');
+}
+
+if (command === '8d') {
+  const player = oneplayer.get(message.guild.id);
+  if (!player) return message.reply('❌ Nothing playing!');
+
+  await player.filters.set8D();
+  message.reply('🎧 8D audio enabled!');
+}
+
+if (command === 'clearfilters') {
+  const player = oneplayer.get(message.guild.id);
+  if (!player) return message.reply('❌ Nothing playing!');
+
+  await player.filters.clearFilters();
+  message.reply('🧹 Filters cleared!');
+}
+```
+
+## Loop Modes
+
+```javascript
+if (command === 'loop') {
+  const player = oneplayer.get(message.guild.id);
+  if (!player) return message.reply('❌ Nothing playing!');
+
+  const mode = args[0] || 'none';
+  if (!['none', 'track', 'queue'].includes(mode)) {
+    return message.reply('❌ Invalid mode!');
+  }
+
+  player.setLoop(mode);
+  message.reply(`🔁 Loop: ${mode}`);
+}
+```
+
+## Complete Example
+
+```javascript
+const { Client, GatewayIntentBits } = require('discord.js');
+const { OnePlayer } = require('oneplayer');
+
+const client = new Client({
+  intents: [
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildVoiceStates,
+    GatewayIntentBits.GuildMessages,
+    GatewayIntentBits.MessageContent,
+  ],
+});
+
+const oneplayer = new OnePlayer(client, [
+  {
+    name: 'main',
+    host: 'localhost',
+    port: 2333,
+    password: 'youshallnotpass',
+    secure: false,
+    restVersion: 'v4'
+  }
+], {
+  send: (guildId, payload) => {
+    const guild = client.guilds.cache.get(guildId);
+    if (guild) guild.shard.send(payload);
+  },
+  defaultSearchPlatform: 'ytmsearch',
+  restVersion: 'v4',
+  defaultVolume: 100
+});
+
+client.on('ready', () => {
+  oneplayer.init(client.user.id);
+  console.log('✅ Ready!');
+});
+
+client.on('raw', (packet) => {
+  oneplayer.updateVoiceState(packet);
+});
+
+client.on('messageCreate', async (message) => {
+  if (message.author.bot || !message.content.startsWith('!')) return;
+
+  const [cmd, ...args] = message.content.slice(1).split(' ');
+  const player = oneplayer.players.get(message.guild.id);
+
+  if (cmd === 'play') {
+    if (!message.member.voice.channel) {
+      return message.reply('❌ Join voice!');
+    }
+
+    const p = oneplayer.createConnection({
+      guildId: message.guild.id,
+      voiceChannel: message.member.voice.channel.id,
+      textChannel: message.channel.id,
+      deaf: true
+    });
+
+    const result = await oneplayer.resolve({
+      query: args.join(' '),
+      requester: message.author
+    });
+
+    if (!result.tracks.length) return message.reply('❌ Not found!');
+
+    p.queue.add(result.tracks[0]);
+    if (!p.playing) await p.play();
+
+    message.reply(`🎵 Added **${result.tracks[0].info.title}**`);
+  }
+
+  else if (cmd === 'skip' && player) {
+    await player.skip();
+    message.reply('⏭️ Skipped!');
+  }
+
+  else if (cmd === 'stop' && player) {
+    player.destroy();
+    message.reply('⏹️ Stopped!');
+  }
+});
+
+client.login('YOUR_BOT_TOKEN');
+```
+
+## Next Steps
+
+- Check out the [API Reference](/basics/api-reference) for all available methods
+- Explore [Implementations](/implementations) for advanced features
+- Read about [Filters](/implementations/filters) for audio effects

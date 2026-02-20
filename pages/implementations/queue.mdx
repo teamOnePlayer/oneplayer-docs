@@ -1,0 +1,202 @@
+import { Callout } from 'nextra/components'
+
+# __Queue__
+
+Represents the player's track queue. Extends JavaScript Array with additional methods.
+
+## __Properties__
+
+### __.size__
+Get queue length.
+
+```js copy
+console.log(player.queue.size); // 5
+```
+
+### __.first__
+Get first track in queue (or null).
+
+```js copy
+const nextTrack = player.queue.first;
+```
+
+### __.last__
+Get last track in queue (or null).
+
+```js copy
+const lastTrack = player.queue.last;
+```
+
+### __.isEmpty__
+Check if queue is empty.
+
+```js copy
+if (player.queue.isEmpty) {
+    message.reply("Queue is empty!");
+}
+```
+
+### __.totalDuration__
+Get total duration of all tracks in ms.
+
+```js copy
+console.log(player.queue.totalDuration); // 360000
+```
+
+### __.formattedDuration__
+Get formatted duration string.
+
+```js copy
+console.log(player.queue.formattedDuration); // "1:23:45"
+```
+
+---
+
+## __Methods__
+
+### __.add(track)__
+Add track(s) to the queue.
+
+```js copy
+// Add single track
+player.queue.add(track);
+
+// Add multiple tracks
+player.queue.add([track1, track2, track3]);
+```
+
+Returns: `Queue`
+
+### __.remove(index)__
+Remove track at index.
+
+```js copy
+const removed = player.queue.remove(2);
+console.log(`Removed: ${removed.info.title}`);
+```
+
+Returns: `Track`
+
+### __.removeRange(start, count)__
+Remove multiple tracks.
+
+```js copy
+const removed = player.queue.removeRange(0, 5);
+console.log(`Removed ${removed.length} tracks`);
+```
+
+Returns: `Track[]`
+
+### __.clear()__
+Clear the entire queue.
+
+```js copy
+player.queue.clear();
+```
+
+Returns: `void`
+
+### __.shuffle()__
+Shuffle the queue (Fisher-Yates algorithm).
+
+```js copy
+player.queue.shuffle();
+message.reply("Queue shuffled!");
+```
+
+Returns: `Queue`
+
+### __.move(from, to)__
+Move a track from one position to another.
+
+```js copy
+player.queue.move(5, 0); // Move track from position 5 to front
+```
+
+Returns: `Queue`
+
+### __.swap(index1, index2)__
+Swap two tracks.
+
+```js copy
+player.queue.swap(0, 3); // Swap first and fourth tracks
+```
+
+Returns: `Queue`
+
+### __.reverse()__
+Reverse the queue order.
+
+```js copy
+player.queue.reverse();
+```
+
+Returns: `Queue`
+
+### __.peek(start, end)__
+Get a slice of the queue without modifying it.
+
+```js copy
+const firstFive = player.queue.peek(0, 5);
+```
+
+Returns: `Track[]`
+
+### __.skipTo(index)__
+Skip to a specific index (removes tracks before it).
+
+```js copy
+const skipped = player.queue.skipTo(5);
+console.log(`Skipped ${skipped.length} tracks`);
+```
+
+Returns: `Track[]`
+
+### __.getByRequester(user)__
+Get all tracks requested by a user.
+
+```js copy
+const userTracks = player.queue.getByRequester(message.author);
+```
+
+Returns: `Track[]`
+
+### __.removeByRequester(user)__
+Remove all tracks requested by a user.
+
+```js copy
+const removed = player.queue.removeByRequester(message.author);
+message.reply(`Removed ${removed.length} of your tracks`);
+```
+
+Returns: `Track[]`
+
+### __.removeDuplicates()__
+Remove duplicate tracks (by identifier).
+
+```js copy
+player.queue.removeDuplicates();
+message.reply("Removed duplicate tracks!");
+```
+
+Returns: `Queue`
+
+---
+
+## __Example Usage__
+
+```js copy
+// Queue command
+if (command === "queue") {
+    if (player.queue.isEmpty) {
+        return message.reply("Queue is empty!");
+    }
+    
+    const tracks = player.queue.peek(0, 10);
+    const list = tracks.map((t, i) => 
+        `${i + 1}. ${t.info.title}`
+    ).join("\n");
+    
+    message.reply(`**Queue (${player.queue.size} tracks)**\n${list}\n\nDuration: ${player.queue.formattedDuration}`);
+}
+```

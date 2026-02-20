@@ -1,0 +1,127 @@
+import { Callout } from 'nextra/components'
+
+# __Track__
+
+Represents a playable track.
+
+## __Properties__
+
+### __encoded__
+Encoded track string from Lavalink.
+
+```js copy
+console.log(track.encoded);
+```
+
+### __track__
+Alias for `encoded` (for compatibility).
+
+### __info__
+Object containing track metadata:
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `identifier` | string | Track identifier |
+| `title` | string | Track title |
+| `author` | string | Track author/artist |
+| `length` | number | Duration in milliseconds |
+| `uri` | string | Track URL |
+| `sourceName` | string | Source platform (youtube, soundcloud, etc.) |
+| `artworkUrl` | string | Artwork/thumbnail URL |
+| `isrc` | string | ISRC code (if available) |
+| `seekable` | boolean | Whether track is seekable |
+| `stream` | boolean | Whether source is a stream/live |
+| `position` | number | Current playback position |
+| `requester` | any | User who requested the track |
+
+```js copy
+console.log(track.info.title);    // "Never Gonna Give You Up"
+console.log(track.info.author);   // "Rick Astley"
+console.log(track.info.length);   // 213000
+console.log(track.info.uri);      // "https://youtube.com/watch?v=..."
+```
+
+### __pluginInfo__
+Raw plugin info object from Lavalink.
+
+---
+
+## __Methods__
+
+### __.getThumbnail()__
+Get thumbnail URL with smart fallback.
+
+```js copy
+const thumbnail = await track.getThumbnail();
+console.log(thumbnail); // "https://img.youtube.com/vi/..."
+```
+
+<Callout type="info">
+`getThumbnail()` automatically fetches thumbnails from YouTube, Spotify, or SoundCloud based on the source.
+</Callout>
+
+### resolve(oneplayer)
+
+Resolve an unresolved track (e.g., Spotify to YouTube).
+
+```javascript copy
+const resolved = await track.resolve(oneplayer);
+console.log(resolved.track); // Now has encoded track string
+```
+
+**Matching Logic:**
+1. First tries to find official audio (matching author/title)
+2. Falls back to duration-matched candidates (±2 seconds)
+3. Last resort: first search result
+
+### __.toJSON()__
+Serialize track to JSON.
+
+```js copy
+const json = track.toJSON();
+console.log(json);
+// { encoded: "...", info: {...}, pluginInfo: {...} }
+```
+
+---
+
+## __Example Usage__
+
+```js copy
+// Now playing command
+if (command === "nowplaying") {
+    const track = player.current;
+    
+    if (!track) {
+        return message.reply("Nothing is playing!");
+    }
+    
+    const thumbnail = await track.getThumbnail();
+    const duration = formatDuration(track.info.length);
+    const position = formatDuration(player.position);
+    
+    message.reply({
+        embeds: [{
+            title: track.info.title,
+            description: `By: ${track.info.author}`,
+            thumbnail: { url: thumbnail },
+            fields: [
+                { name: "Duration", value: `${position} / ${duration}`, inline: true },
+                { name: "Source", value: track.info.sourceName, inline: true },
+                { name: "Requested by", value: track.info.requester.tag, inline: true }
+            ]
+        }]
+    });
+}
+
+function formatDuration(ms) {
+    const seconds = Math.floor((ms / 1000) % 60);
+    const minutes = Math.floor((ms / 60000) % 60);
+    const hours = Math.floor(ms / 3600000);
+    
+    if (hours > 0) {
+        return `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    }
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+}
+```

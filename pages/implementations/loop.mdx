@@ -1,0 +1,63 @@
+import { Callout } from 'nextra/components'
+
+# __Loop__
+
+Looping allows you to repeat the current track or the entire queue.
+
+## __Loop Modes__
+
+| Mode | Description |
+|------|-------------|
+| `none` | No looping (default) |
+| `track` | Loop current track |
+| `queue` | Loop entire queue |
+
+## __Queue Loop__
+
+Loop the entire queue - when queue ends, it starts over.
+
+```js copy
+player.setLoop("queue");
+```
+
+## __Track Loop__
+
+Loop the current track indefinitely.
+
+```js copy
+player.setLoop("track");
+```
+
+## __Disable Loop__
+
+Turn off looping.
+
+```js copy
+player.setLoop("none");
+```
+
+## __Get Current Loop Mode__
+
+<Callout emoji="💡">
+You can check the current loop mode using the `loop` property.
+</Callout>
+
+```js copy
+console.log(player.loop); // "none", "track", or "queue"
+```
+
+## __Example Usage__
+
+```js copy
+// Toggle loop command
+if (command === "loop") {
+    const mode = args[0]?.toLowerCase();
+    
+    if (!mode || !["none", "track", "queue"].includes(mode)) {
+        return message.reply("Usage: !loop <none|track|queue>");
+    }
+    
+    player.setLoop(mode);
+    message.reply(`Loop mode set to: **${mode}**`);
+}
+```

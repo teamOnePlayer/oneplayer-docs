@@ -1,0 +1,292 @@
+import { Steps } from 'nextra/components'
+import { Callout } from 'nextra/components'
+import { Tabs } from 'nextra/components'
+
+# Usage
+
+### 1. Lavalink Node
+
+First, you need a running Lavalink server. Download from [GitHub](https://github.com/lavalink-devs/Lavalink) or use a public node.
+
+### 2. Basic Setup
+
+<Tabs items={['Lavalink v4', 'v3']}>
+<Tabs.Tab>
+```javascript copy filename="index.js"
+const { Client, GatewayIntentBits, GatewayDispatchEvents } = require("discord.js");
+const { OnePlayer } = require("oneplayer");
+
+const client = new Client({
+    intents: [
+        GatewayIntentBits.Guilds,
+        GatewayIntentBits.GuildMessages,
+        GatewayIntentBits.GuildVoiceStates,
+        GatewayIntentBits.MessageContent,
+    ]
+});
+
+const nodes = [
+    {
+        name: "main",
+        host: "localhost",
+        password: "youshallnotpass",
+        port: 2333,
+        secure: false,
+        restVersion: "v4"
+    },
+];
+
+const oneplayer = new OnePlayer(client, nodes, {
+    send: (guildId, payload) => {
+        const guild = client.guilds.cache.get(guildId);
+        if (guild) guild.shard.send(payload);
+    },
+    defaultSearchPlatform: "ytmsearch",
+    restVersion: "v4",
+    defaultVolume: 100
+});
+
+client.on("ready", () => {
+    oneplayer.init(client.user.id);
+    console.log(`Logged in as ${client.user.tag}`);
+});
+
+client.on("messageCreate", async (message) => {
+    if (!message.content.startsWith('!') || message.author.bot) return;
+
+    const args = message.content.slice(1).trim().split(" ");
+    const command = args.shift().toLowerCase();
+
+    if (command === "play") {
+        const query = args.join(" ");
+
+        if (!message.member.voice.channel) {
+            return message.reply("❌ Join a voice channel!");
+        }
+
+        const player = oneplayer.createConnection({
+            guildId: message.guild.id,
+            voiceChannel: message.member.voice.channel.id,
+            textChannel: message.channel.id,
+            deaf: true
+        });
+
+        const result = await oneplayer.resolve({ 
+            query: query, 
+            requester: message.author 
+        });
+
+        if (!result.tracks.length) {
+            return message.reply("❌ No results found!");
+        }
+
+        const track = result.tracks[0];
+        player.queue.add(track);
+
+        if (!player.playing && !player.paused) {
+            await player.play();
+        }
+
+        message.reply(`🎵 Added: **${track.info.title}**`);
+    }
+});
+
+oneplayer.on("nodeConnect", node => {
+    console.log(`✅ Node "${node.name}" connected`);
+});
+
+oneplayer.on("nodeError", (node, error) => {
+    console.error(`❌ Node "${node.name}" error: ${error.message}`);
+});
+
+client.on("raw", (d) => {
+    if (![GatewayDispatchEvents.VoiceStateUpdate, GatewayDispatchEvents.VoiceServerUpdate].includes(d.t)) return;
+    oneplayer.updateVoiceState(d);
+});
+
+client.login("YOUR_BOT_TOKEN");
+```
+</Tabs.Tab>
+<Tabs.Tab>
+```javascript copy filename="index.js"
+const { Client, GatewayIntentBits, GatewayDispatchEvents } = require("discord.js");
+const { OnePlayer } = require("oneplayer");
+
+const client = new Client({
+    intents: [
+        GatewayIntentBits.Guilds,
+        GatewayIntentBits.GuildMessages,
+        GatewayIntentBits.GuildVoiceStates,
+        GatewayIntentBits.MessageContent,
+    ]
+});
+
+const nodes = [
+    {
+        name: "main",
+        host: "localhost",
+        password: "youshallnotpass",
+        port: 2333,
+        secure: false,
+        restVersion: "v3"
+    },
+];
+
+const oneplayer = new OnePlayer(client, nodes, {
+    send: (guildId, payload) => {
+        const guild = client.guilds.cache.get(guildId);
+        if (guild) guild.shard.send(payload);
+    },
+    defaultSearchPlatform: "ytmsearch",
+    restVersion: "v3",
+    defaultVolume: 100
+});
+
+client.on("ready", () => {
+    oneplayer.init(client.user.id);
+    console.log(`Logged in as ${client.user.tag}`);
+});
+
+client.on("messageCreate", async (message) => {
+    if (!message.content.startsWith('!') || message.author.bot) return;
+
+    const args = message.content.slice(1).trim().split(" ");
+    const command = args.shift().toLowerCase();
+
+    if (command === "play") {
+        const query = args.join(" ");
+
+        if (!message.member.voice.channel) {
+            return message.reply("❌ Join a voice channel!");
+        }
+
+        const player = oneplayer.createConnection({
+            guildId: message.guild.id,
+            voiceChannel: message.member.voice.channel.id,
+            textChannel: message.channel.id,
+            deaf: true
+        });
+
+        const result = await oneplayer.resolve({ 
+            query: query, 
+            requester: message.author 
+        });
+
+        if (!result.tracks.length) {
+            return message.reply("❌ No results found!");
+        }
+
+        const track = result.tracks[0];
+        player.queue.add(track);
+
+        if (!player.playing && !player.paused) {
+            await player.play();
+        }
+
+        message.reply(`🎵 Added: **${track.info.title}**`);
+    }
+});
+
+oneplayer.on("nodeConnect", node => {
+    console.log(`✅ Node "${node.name}" connected`);
+});
+
+oneplayer.on("nodeError", (node, error) => {
+    console.error(`❌ Node "${node.name}" error: ${error.message}`);
+});
+
+client.on("raw", (d) => {
+    if (![GatewayDispatchEvents.VoiceStateUpdate, GatewayDispatchEvents.VoiceServerUpdate].includes(d.t)) return;
+    oneplayer.updateVoiceState(d);
+});
+
+client.login("YOUR_BOT_TOKEN");
+```
+</Tabs.Tab>
+</Tabs>
+
+### 3. Running Your Bot
+
+```bash copy
+node index.js
+```
+
+Now use `!play song_name` to play music!
+
+### 4. Configuration Options
+
+```javascript copy
+const oneplayer = new OnePlayer(client, nodes, {
+    // Required: Send voice state to Discord
+    send: (guildId, payload) => { /* ... */ },
+    
+    // Search settings
+    defaultSearchPlatform: "ytmsearch",  // or "ytsearch", "scsearch"
+    restVersion: "v4",                   // or "v3"
+    
+    // Player settings
+    defaultVolume: 100,                  // 0-200
+    connectionTimeout: 10000,            // ms
+    
+    // Node settings
+    reconnectTimeout: 3000,              // ms
+    reconnectTries: 3,                   // attempts
+    
+    // Debug
+    debug: false
+});
+```
+
+### 5. Common Commands
+
+```javascript
+// Play
+await player.play(track);
+
+// Skip
+await player.skip();
+
+// Stop
+await player.stop();
+
+// Pause/Resume
+await player.pause(true);   // pause
+await player.pause(false);  // resume
+
+// Volume
+await player.setVolume(100);
+
+// Seek
+await player.seek(30000);
+
+// Loop
+player.setLoop('none');    // no loop
+player.setLoop('track');   // loop current
+player.setLoop('queue');   // loop all
+
+// Queue
+player.queue.add(track);
+player.queue.shuffle();
+player.queue.clear();
+```
+
+### 6. Filters
+
+```javascript
+// Bass boost
+await player.filters.setBassBoost(0.5);
+
+// Nightcore
+await player.filters.setNightcore();
+
+// Vaporwave
+await player.filters.setVaporwave();
+
+// 8D Audio
+await player.filters.set8D();
+
+// Clear all
+await player.filters.clearFilters();
+```
+
+See the [Getting Started](/basics/explained-code) guide for more examples!

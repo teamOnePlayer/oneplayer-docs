@@ -1,0 +1,246 @@
+import { Callout } from 'nextra/components'
+
+# Events
+
+OnePlayer emits various events that you can listen to for handling different scenarios.
+
+## Node Events
+
+### nodeCreate
+
+Emitted when a node is created.
+
+```javascript copy
+oneplayer.on("nodeCreate", (node) => {
+  console.log(`Node "${node.name}" created`);
+});
+```
+
+### nodeDestroy
+
+Emitted when a node is destroyed.
+
+```javascript copy
+oneplayer.on("nodeDestroy", (node) => {
+  console.log(`Node "${node.name}" destroyed`);
+});
+```
+
+---
+
+## Player Events
+
+### playerCreate
+
+Emitted when a player is created for a guild.
+
+```javascript copy
+oneplayer.on("playerCreate", (player) => {
+  console.log(`Player created for guild ${player.guildId}`);
+});
+```
+
+### playerDestroy
+
+Emitted when a player is destroyed.
+
+```javascript copy
+oneplayer.on("playerDestroy", (player) => {
+  console.log(`Player destroyed for guild ${player.guildId}`);
+});
+```
+
+---
+
+## Track Events
+
+### trackStart
+
+Emitted when a track starts playing.
+
+```javascript copy
+oneplayer.on("trackStart", (player, track) => {
+  const channel = client.channels.cache.get(player.textChannel);
+  if (channel) {
+    channel.send(`🎵 Now playing: **${track.info.title}** by **${track.info.author}**`);
+  }
+});
+```
+
+**Parameters:**
+- `player` - The player instance
+- `track` - The track that started
+
+### trackEnd
+
+Emitted when a track ends.
+
+```javascript copy
+oneplayer.on("trackEnd", (player, track, payload) => {
+  console.log(`Track ended: ${track.info.title}`);
+  console.log(`Reason: ${payload.reason}`);
+  // Reasons: finished, loadFailed, stopped, replaced, cleanup
+});
+```
+
+**Parameters:**
+- `player` - The player instance
+- `track` - The track that ended
+- `payload` - Event payload with reason
+
+### trackError
+
+Emitted when a track fails to play.
+
+```javascript copy
+oneplayer.on("trackError", (player, track, payload) => {
+  console.error(`Track error: ${track.info.title}`);
+  console.error(`Exception:`, payload.exception);
+  
+  const channel = client.channels.cache.get(player.textChannel);
+  if (channel) {
+    channel.send(`❌ Error playing **${track.info.title}**`);
+  }
+});
+```
+
+**Parameters:**
+- `player` - The player instance
+- `track` - The track that errored
+- `payload` - Error payload with exception details
+
+### trackStuck
+
+Emitted when a track gets stuck.
+
+```javascript copy
+oneplayer.on("trackStuck", (player, track, payload) => {
+  console.log(`Track stuck: ${track.info.title}`);
+  console.log(`Threshold: ${payload.thresholdMs}ms`);
+});
+```
+
+**Parameters:**
+- `player` - The player instance
+- `track` - The stuck track
+- `payload` - Event payload with threshold
+
+---
+
+## Connection Events
+
+### socketClosed
+
+Emitted when the WebSocket connection to voice closes.
+
+```javascript copy
+oneplayer.on("socketClosed", (player, payload) => {
+  console.log(`WebSocket closed for guild ${player.guildId}`);
+  console.log(`Code: ${payload.code}, Reason: ${payload.reason}`);
+  console.log(`By remote: ${payload.byRemote}`);
+});
+```
+
+**Parameters:**
+- `player` - The player instance
+- `payload` - Close event details
+
+---
+
+## Complete Example
+
+```javascript copy
+const { Client, GatewayIntentBits } = require('discord.js');
+const { OnePlayer } = require('oneplayer');
+
+const client = new Client({
+  intents: [
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildVoiceStates,
+    GatewayIntentBits.GuildMessages,
+    GatewayIntentBits.MessageContent
+  ]
+});
+
+const oneplayer = new OnePlayer(client, nodes, {
+  send: (guildId, payload) => {
+    const guild = client.guilds.cache.get(guildId);
+    if (guild) guild.shard.send(payload);
+  }
+});
+
+// Node events
+oneplayer.on('nodeCreate', (node) => {
+  console.log(`✅ Node ${node.name} created`);
+});
+
+oneplayer.on('nodeDestroy', (node) => {
+  console.log(`❌ Node ${node.name} destroyed`);
+});
+
+// Player events
+oneplayer.on('playerCreate', (player) => {
+  console.log(`🎵 Player created: ${player.guildId}`);
+});
+
+oneplayer.on('playerDestroy', (player) => {
+  console.log(`🗑️ Player destroyed: ${player.guildId}`);
+});
+
+// Track events
+oneplayer.on('trackStart', (player, track) => {
+  const channel = client.channels.cache.get(player.textChannel);
+  if (channel) {
+    channel.send(`🎵 Now playing: **${track.info.title}**`);
+  }
+});
+
+oneplayer.on('trackEnd', (player, track, payload) => {
+  if (payload.reason === 'finished') {
+    console.log(`✅ Finished: ${track.info.title}`);
+  }
+});
+
+oneplayer.on('trackError', (player, track, payload) => {
+  const channel = client.channels.cache.get(player.textChannel);
+  if (channel) {
+    channel.send(`❌ Error: ${payload.exception?.message || 'Unknown error'}`);
+  }
+});
+
+oneplayer.on('trackStuck', (player, track, payload) => {
+  console.log(`⚠️ Track stuck: ${track.info.title}`);
+  player.skip().catch(console.error);
+});
+
+// Connection events
+oneplayer.on('socketClosed', (player, payload) => {
+  console.log(`🔌 Socket closed: ${payload.code}`);
+});
+
+client.on('ready', () => {
+  oneplayer.init(client.user.id);
+  console.log('✅ Bot ready!');
+});
+
+client.login('YOUR_BOT_TOKEN');
+```
+
+---
+
+## Event Flow
+
+Typical event flow for playing a track:
+
+1. `playerCreate` - Player is created
+2. `trackStart` - Track starts playing
+3. `trackEnd` - Track finishes (reason: 'finished')
+4. `trackStart` - Next track starts (if queue has more)
+5. `playerDestroy` - Player is destroyed (when done)
+
+Error flow:
+
+1. `trackStart` - Track starts
+2. `trackError` - Track fails
+3. `trackEnd` - Track ends (reason: 'loadFailed')
+4. Next track plays or queue ends
